@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-poppins text-text;
+    background-color: #222831;
+  }
+}
+
+@layer components {
+  .input {
+    @apply w-full mb-4 p-3 rounded-lg
+      bg-input border border-transparent
+      text-text placeholder-gray-400
+      focus:outline-none focus:border-accent;
+  }
+}
