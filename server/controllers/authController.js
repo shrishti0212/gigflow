@@ -68,11 +68,10 @@ export const loginUser = async (req, res) => {
 
     console.log("✅ Token generated:", token.substring(0, 20) + "...");
 
-    // Set cookie
-    res.cookie("token", token, {
+      res.cookie("token", token, {
       httpOnly: true,
-      sameSite: "lax",
-      secure: false,
+      secure: true,        // REQUIRED for HTTPS (Vercel + Render)
+      sameSite: "none",    // REQUIRED for cross-site cookies
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: "/",
     });
@@ -93,12 +92,17 @@ export const loginUser = async (req, res) => {
   }
 };
 
-/* 🚪 LOGOUT */
 export const logoutUser = (req, res) => {
-  res.clearCookie("token", { path: "/" });
-  console.log("✅ User logged out");
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    path: "/",
+  });
+
   res.json({ message: "Logged out" });
 };
+
 
 /* 👤 GET CURRENT USER */
 export const getMe = async (req, res) => {
