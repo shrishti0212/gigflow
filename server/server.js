@@ -43,7 +43,7 @@ const allowedOrigins = [
 
 console.log("🔐 CORS Origins:", allowedOrigins);
 
-// CORS configuration
+// CORS configuration - FIXED FOR PATCH METHOD
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl)
@@ -62,13 +62,16 @@ const corsOptions = {
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
   exposedHeaders: ["Set-Cookie"],
-  optionsSuccessStatus: 200
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 };
 
 // Apply middleware
 app.use(cors(corsOptions));
+
+// CRITICAL: Handle preflight for ALL routes BEFORE other routes
 app.options("*", cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
@@ -80,6 +83,19 @@ app.use((req, res, next) => {
     origin: req.headers.origin || "no-origin",
     hasAuth: !!req.cookies?.token
   });
+  next();
+});
+
+// Explicit preflight handler for ALL routes (must be BEFORE routes)
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    res.header('Access-Control-Allow-Origin', req.headers.origin);
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Max-Age', '86400'); // 24 hours
+    return res.status(204).end();
+  }
   next();
 });
 
