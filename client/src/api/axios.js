@@ -8,27 +8,28 @@ const api = axios.create({
   },
 });
 
-// Add request interceptor for debugging
+// Request interceptor
 api.interceptors.request.use(
   (config) => {
-    console.log("📤 Request:", {
-      method: config.method.toUpperCase(),
+    console.log("📤 API Request:", {
+      method: config.method?.toUpperCase(),
       url: config.url,
+      baseURL: config.baseURL,
       fullURL: `${config.baseURL}${config.url}`,
-      data: config.data
+      withCredentials: config.withCredentials
     });
     return config;
   },
   (error) => {
-    console.error("Request Error:", error);
+    console.error("❌ Request Error:", error);
     return Promise.reject(error);
   }
 );
 
-// Add response interceptor for debugging
+// Response interceptor
 api.interceptors.response.use(
   (response) => {
-    console.log("✅ Response:", {
+    console.log("✅ API Response:", {
       url: response.config.url,
       status: response.status,
       data: response.data
@@ -36,12 +37,22 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    console.error("❌ Response Error:", {
+    console.error("❌ API Error:", {
       url: error.config?.url,
+      baseURL: error.config?.baseURL,
       status: error.response?.status,
       message: error.response?.data?.message || error.message,
-      fullError: error
+      corsError: error.message === "Network Error"
     });
+    
+    // Handle CORS errors specifically
+    if (error.message === "Network Error") {
+      console.error("🚨 CORS or Network Error - Check:");
+      console.error("1. Backend is running");
+      console.error("2. CORS is configured correctly");
+      console.error("3. URL is correct:", error.config?.baseURL);
+    }
+    
     return Promise.reject(error);
   }
 );

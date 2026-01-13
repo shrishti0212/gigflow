@@ -1,35 +1,36 @@
 import { useEffect, useState } from "react";
 import api from "../api/axios";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 export default function Gigs() {
   const [myGigs, setMyGigs] = useState([]);
-  const [myBids, setMyBids] = useState([]); // NEW
+  const [myBids, setMyBids] = useState([]);
   const [availableGigs, setAvailableGigs] = useState([]);
+  const [searchQuery, setSearchQuery] = useState(""); // ✅ NEW
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchGigs = async () => {
-      try {
-        const [myGigsRes, myBidsRes, availableGigsRes] = await Promise.all([
-          api.get("/api/gigs/my"),
-          api.get("/api/bids/my"), // FETCH MY BIDS
-          api.get("/api/gigs/available"),
-        ]);
-        
-        setMyGigs(myGigsRes.data);
-        setMyBids(myBidsRes.data); // SET MY BIDS
-        setAvailableGigs(availableGigsRes.data);
-      } catch (error) {
-        console.error("Error fetching gigs:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchGigs();
-  }, []);
+  }, [searchQuery]); // ✅ Re-fetch when search changes
+
+  const fetchGigs = async () => {
+    try {
+      const [myGigsRes, myBidsRes, availableGigsRes] = await Promise.all([
+        api.get("/api/gigs/my"),
+        api.get("/api/bids/my"),
+        // ✅ Add search query parameter
+        api.get(`/api/gigs/available${searchQuery ? `?search=${searchQuery}` : ""}`),
+      ]);
+      
+      setMyGigs(myGigsRes.data);
+      setMyBids(myBidsRes.data);
+      setAvailableGigs(availableGigsRes.data);
+    } catch (error) {
+      console.error("Error fetching gigs:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -87,10 +88,9 @@ export default function Gigs() {
       </nav>
 
       <div className="p-8 space-y-12">
-        {/* 🔷 SECTION 1: MY GIGS */}
+        {/* MY GIGS SECTION */}
         <section>
           <h2 className="text-2xl font-bold text-accent mb-4">My Gigs</h2>
-
           {myGigs.length === 0 ? (
             <div className="bg-[#1f242d] p-8 rounded-xl text-center">
               <p className="text-gray-400 mb-4">You haven't created any gigs yet.</p>
@@ -109,38 +109,19 @@ export default function Gigs() {
                   className="bg-[#1f242d] p-5 rounded-xl border border-accent/20 hover:border-accent/50 transition"
                 >
                   <h3 className="text-xl font-semibold">{gig.title}</h3>
-                  <p className="text-gray-400 mt-2 line-clamp-2">
-                    {gig.description}
-                  </p>
+                  <p className="text-gray-400 mt-2 line-clamp-2">{gig.description}</p>
                   <p className="text-accent mt-3 font-bold">₹{gig.budget}</p>
                   <p className="text-sm text-gray-500 mt-1">
-                    Status:{" "}
-                    <span
-                      className={
-                        gig.status === "open" ? "text-green-400" : "text-yellow-400"
-                      }
-                    >
-                      {gig.status}
-                    </span>
+                    Status: <span className={gig.status === "open" ? "text-green-400" : "text-yellow-400"}>{gig.status}</span>
                   </p>
-
                   <div className="flex gap-2 mt-4">
-                    <Link
-                      to={`/gigs/${gig._id}`}
-                      className="flex-1 text-center bg-accent text-bg py-2 rounded-xl font-semibold hover:opacity-90"
-                    >
+                    <Link to={`/gigs/${gig._id}`} className="flex-1 text-center bg-accent text-bg py-2 rounded-xl font-semibold hover:opacity-90">
                       View Bids
                     </Link>
-                    <Link
-                      to={`/edit/${gig._id}`}
-                      className="flex-1 text-center bg-blue-600 text-white py-2 rounded-xl font-semibold hover:opacity-90"
-                    >
+                    <Link to={`/edit/${gig._id}`} className="flex-1 text-center bg-blue-600 text-white py-2 rounded-xl font-semibold hover:opacity-90">
                       Edit
                     </Link>
-                    <button
-                      onClick={() => handleDelete(gig._id)}
-                      className="flex-1 bg-red-600 text-white py-2 rounded-xl font-semibold hover:opacity-90"
-                    >
+                    <button onClick={() => handleDelete(gig._id)} className="flex-1 bg-red-600 text-white py-2 rounded-xl font-semibold hover:opacity-90">
                       Delete
                     </button>
                   </div>
@@ -150,10 +131,9 @@ export default function Gigs() {
           )}
         </section>
 
-        {/* 🔷 SECTION 2: MY BIDS */}
+        {/* MY BIDS SECTION */}
         <section>
           <h2 className="text-2xl font-bold text-accent mb-4">My Bids</h2>
-
           {myBids.length === 0 ? (
             <div className="bg-[#1f242d] p-8 rounded-xl text-center">
               <p className="text-gray-400">You haven't placed any bids yet.</p>
@@ -161,33 +141,15 @@ export default function Gigs() {
           ) : (
             <div className="grid md:grid-cols-3 gap-6">
               {myBids.map((bid) => (
-                <div
-                  key={bid._id}
-                  className="bg-[#1f242d] p-5 rounded-xl border border-accent/20 hover:border-accent/50 transition"
-                >
+                <div key={bid._id} className="bg-[#1f242d] p-5 rounded-xl border border-accent/20 hover:border-accent/50 transition">
                   <h3 className="text-xl font-semibold">{bid.gigId?.title || "Deleted Gig"}</h3>
                   <p className="text-accent mt-2 font-bold">Your Bid: ₹{bid.price}</p>
                   <p className="text-sm text-gray-400 mt-1 line-clamp-2">{bid.message}</p>
                   <p className="text-sm mt-2">
-                    Status:{" "}
-                    <span
-                      className={
-                        bid.status === "hired"
-                          ? "text-green-400"
-                          : bid.status === "rejected"
-                          ? "text-red-400"
-                          : "text-yellow-400"
-                      }
-                    >
-                      {bid.status}
-                    </span>
+                    Status: <span className={bid.status === "hired" ? "text-green-400" : bid.status === "rejected" ? "text-red-400" : "text-yellow-400"}>{bid.status}</span>
                   </p>
-
                   {bid.gigId && (
-                    <Link
-                      to={`/gigs/${bid.gigId._id}`}
-                      className="inline-block mt-4 text-accent hover:underline"
-                    >
+                    <Link to={`/gigs/${bid.gigId._id}`} className="inline-block mt-4 text-accent hover:underline">
                       View Project →
                     </Link>
                   )}
@@ -197,33 +159,45 @@ export default function Gigs() {
           )}
         </section>
 
-        {/* 🔷 SECTION 3: AVAILABLE GIGS */}
+        {/* ✅ AVAILABLE GIGS WITH SEARCH */}
         <section>
-          <h2 className="text-2xl font-bold text-accent mb-4">
-            Available Gigs
-          </h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-accent">Available Gigs</h2>
+            
+            {/* ✅ SEARCH BAR */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search gigs..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-[#1f242d] text-text px-4 py-2 rounded-xl outline-none focus:ring-2 focus:ring-accent w-64"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-accent"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
 
           {availableGigs.length === 0 ? (
             <div className="bg-[#1f242d] p-8 rounded-xl text-center">
-              <p className="text-gray-400">No gigs available right now.</p>
+              <p className="text-gray-400">
+                {searchQuery ? `No gigs found for "${searchQuery}"` : "No gigs available right now."}
+              </p>
             </div>
           ) : (
             <div className="grid md:grid-cols-3 gap-6">
               {availableGigs.map((gig) => (
-                <div
-                  key={gig._id}
-                  className="bg-[#1f242d] p-5 rounded-xl border border-accent/20 hover:border-accent/50 transition"
-                >
+                <div key={gig._id} className="bg-[#1f242d] p-5 rounded-xl border border-accent/20 hover:border-accent/50 transition">
                   <h3 className="text-xl font-semibold">{gig.title}</h3>
-                  <p className="text-gray-400 mt-2 line-clamp-2">
-                    {gig.description}
-                  </p>
+                  <p className="text-gray-400 mt-2 line-clamp-2">{gig.description}</p>
                   <p className="text-accent mt-3 font-bold">₹{gig.budget}</p>
-
-                  <Link
-                    to={`/gigs/${gig._id}`}
-                    className="inline-block mt-4 text-accent hover:underline"
-                  >
+                  <Link to={`/gigs/${gig._id}`} className="inline-block mt-4 text-accent hover:underline">
                     View & Bid →
                   </Link>
                 </div>

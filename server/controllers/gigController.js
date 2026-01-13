@@ -1,8 +1,6 @@
 import Gig from "../models/Gig.js";
 
-/* =========================
-   CREATE GIG (CREATOR)
-========================= */
+/* CREATE GIG (CREATOR) */
 export const createGig = async (req, res) => {
   try {
     const { title, description, budget } = req.body;
@@ -25,9 +23,7 @@ export const createGig = async (req, res) => {
   }
 };
 
-/* =========================
-   MY GIGS (CREATOR VIEW)
-========================= */
+/* MY GIGS (CREATOR VIEW) */
 export const getMyGigs = async (req, res) => {
   try {
     const gigs = await Gig.find({ ownerId: req.userId })
@@ -39,15 +35,28 @@ export const getMyGigs = async (req, res) => {
   }
 };
 
-/* =========================
-   AVAILABLE GIGS (FREELANCER VIEW)
-========================= */
+/* ✅ AVAILABLE GIGS WITH SEARCH (FREELANCER VIEW) */
 export const getAvailableGigs = async (req, res) => {
   try {
-    const gigs = await Gig.find({
-      ownerId: { $ne: req.userId }, // not my gigs
+    const { search } = req.query;
+
+    // Build query
+    const query = {
+      ownerId: { $ne: req.userId },
       status: "open",
-    }).sort({ createdAt: -1 });
+    };
+
+    // ✅ Add search filter if provided
+    if (search && search.trim()) {
+      query.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } }
+      ];
+    }
+
+    const gigs = await Gig.find(query)
+      .populate("ownerId", "name email")
+      .sort({ createdAt: -1 });
 
     res.json(gigs);
   } catch (error) {
@@ -55,9 +64,7 @@ export const getAvailableGigs = async (req, res) => {
   }
 };
 
-/* =========================
-   SINGLE GIG DETAILS (SMART)
-========================= */
+/* SINGLE GIG DETAILS (SMART) */
 export const getGigById = async (req, res) => {
   try {
     const gig = await Gig.findById(req.params.id);
@@ -69,16 +76,14 @@ export const getGigById = async (req, res) => {
 
     res.json({
       gig,
-      isOwner, // 🔥 frontend decides UI based on this
+      isOwner,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-/* =========================
-   UPDATE GIG (OWNER ONLY)
-========================= */
+/* UPDATE GIG (OWNER ONLY) */
 export const updateGig = async (req, res) => {
   try {
     const gig = await Gig.findById(req.params.id);
@@ -97,9 +102,7 @@ export const updateGig = async (req, res) => {
   }
 };
 
-/* =========================
-   DELETE GIG (OWNER ONLY)
-========================= */
+/* DELETE GIG (OWNER ONLY) */
 export const deleteGig = async (req, res) => {
   try {
     const gig = await Gig.findById(req.params.id);
