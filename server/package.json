@@ -1,17 +1,17 @@
 {
-  "name": "server",
+  "name": "gigflow-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "GigFlow Backend API",
+  "main": "server.js",
+  "type": "module",
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js"
   },
-  "keywords": [],
+  "keywords": ["freelance", "gigs", "marketplace"],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -23,5 +23,9 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.11"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   }
 }
